@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Portal de Escalamientos · MOVii{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:       #E91E8C;
+      --pink-light: #fde8f4;
+      --pink-dark:  #c4187a;
+      --navy:       #2D2D6B;
+      --navy-light: #f0f0f8;
+      --white:      #ffffff;
+      --gray-bg:    #f7f7fb;
+      --gray-line:  #eeeeee;
+      --text-main:  #2D2D6B;
+      --text-muted: #9a9ab0;
+      --radius:     12px;
+      --radius-sm:  8px;
+      --shadow:     0 2px 16px rgba(45,45,107,0.08);
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--gray-bg);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+    .page-wide { max-width: 1400px; }
+    /* ── Navbar ── */
+    .navbar {
+      background: var(--pink);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(233,30,140,0.25);
+    }
+    .navbar-brand {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .navbar-brand .logo {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+    }
+    .navbar-brand .logo-sub {
+      color: rgba(255,255,255,0.55);
+      font-size: 10px;
+      letter-spacing: 3px;
+      font-weight: 600;
+    }
+    .navbar-nav {
+      display: flex;
+      gap: 4px;
+      list-style: none;
+    }
+    .navbar-nav a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 16px;
+      border-radius: 20px;
+      transition: background .2s, color .2s;
+    }
+    .navbar-nav a:hover,
+    .navbar-nav a.active {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+    }
+
+    /* ── Page wrapper ── */
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 36px 16px 60px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Alerts ── */
+    .alert {
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .alert-success { background: #eaf7f0; color: #1a7a4a; border-left: 4px solid #1a7a4a; }
+    .alert-danger  { background: #fde8f4; color: var(--pink); border-left: 4px solid var(--pink); }
+    .alert-warning { background: #fff8e6; color: #b07d00; border-left: 4px solid #f0b429; }
+    .alert-info    { background: var(--navy-light); color: var(--navy); border-left: 4px solid var(--navy); }
+    .alert .close-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: inherit;
+      opacity: .5;
+      line-height: 1;
+    }
+    .alert .close-btn:hover { opacity: 1; }
+
+    /* ── Forms ── */
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: .5px;
+      display: block;
+      margin-bottom: 7px;
+    }
+    .form-control, .form-select {
+      width: 100%;
+      border: 1.5px solid var(--gray-line);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      font-size: 14px;
+      font-family: 'Nunito', sans-serif;
+      color: var(--text-main);
+      background: #fff;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      appearance: none;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 3px rgba(233,30,140,0.1);
+    }
+    .form-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+    textarea.form-control { resize: vertical; min-height: 90px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, background .2s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: var(--pink);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(233,30,140,0.3);
+    }
+    .btn-primary:hover { background: var(--pink-dark); box-shadow: 0 6px 18px rgba(233,30,140,0.38); }
+    .btn-secondary {
+      background: var(--navy-light);
+      color: var(--navy);
+    }
+    .btn-secondary:hover { background: #e4e4f4; }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--gray-line);
+      color: var(--text-muted);
+    }
+    .btn-outline:hover { border-color: var(--pink); color: var(--pink); }
+    .btn-success {
+      background: #1a7a4a;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(26,122,74,0.25);
+    }
+    .btn-success:hover { background: #155f3a; }
+    .btn-w100 { width: 100%; justify-content: center; }
+
+    /* ── Step indicator ── */
+    .steps {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 28px;
+    }
+    .step-bar {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--gray-line);
+      transition: background .3s;
+    }
+    .step-bar.active { background: var(--pink); }
+    .step-bar.done   { background: #1a7a4a; }
+    .step-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      margin-bottom: 24px;
+    }
+    .step-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .step-label.active { color: var(--pink); }
+    .step-label.done   { color: #1a7a4a; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .4px;
+    }
+    .badge-enviado  { background: #eaf7f0; color: #1a7a4a; }
+    .badge-borrador { background: var(--navy-light); color: var(--navy); }
+    .badge-cerrado  { background: var(--pink-light); color: var(--pink); }
+
+    /* ── Log block ── */
+    .log-block {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      background: #1a1a2e;
+      color: #a8d8a8;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* ── Info card (detalles de servicio) ── */
+    .info-chip {
+      display: inline-flex;
+      align-items: center;
+      background: var(--pink-light);
+      color: var(--pink);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      margin: 3px;
+    }
+    .info-chip-navy {
+      background: var(--navy-light);
+      color: var(--navy);
+    }
+
+    /* ── Section header ── */
+    .section-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .section-icon-pink { background: var(--pink-light); }
+    .section-icon-navy { background: var(--navy-light); }
+    .section-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .section-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Table ── */
+    .table-movii {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .table-movii thead th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: .6px;
+      border-bottom: 1.5px solid var(--gray-line);
+    }
+    .table-movii tbody tr {
+      border-bottom: 1px solid var(--gray-line);
+      transition: background .15s;
+    }
+    .table-movii tbody tr:hover { background: var(--gray-bg); }
+    .table-movii tbody td {
+      padding: 13px 14px;
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+    .table-movii tbody tr:last-child { border-bottom: none; }
+
+    .pulse-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #E91E8C;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  position: relative;
+}
+.pulse-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #E91E8C;
+  animation: pulse-ring 1.4s ease-out infinite;
+  opacity: .6;
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: .6; }
+  70%  { transform: scale(1.9); opacity: 0;  }
+  100% { transform: scale(1.9); opacity: 0;  }
+}
+  </style>
+</head>
+
+<audio id="notif-sound" preload="auto">
+  <source src="https://cdn.jsdelivr.net/gh/freeCodeCamp/cdn@main/build/testable-projects-fcc/audio/BeepSound.wav" type="audio/wav">
+</audio>
+
+<script>
+// ── Notificaciones del navegador ──
+let ultimaRevision = new Date().toISOString();
+
+function pedirPermiso() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function mostrarNotificacion(servicio, remitente) {
+  // Sonido
+  document.getElementById('notif-sound').play().catch(() => {});
+
+  // Notificación del navegador
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const notif = new Notification('📬 Respuesta de escalamiento', {
+      body: `${remitente} respondió al escalamiento de ${servicio}`,
+      icon: 'https://www.google.com/favicon.ico',
+    });
+    // Al hacer clic va al historial
+    notif.onclick = () => {
+      window.focus();
+      window.location.href = '/historial/';
+    };
+  }
+}
+
+async function checkRespuestas() {
+  try {
+    const resp = await fetch('/api/check-respuestas/');
+    const data = await resp.json();
+
+    if (data.respuestas && data.respuestas.length > 0) {
+      data.respuestas.forEach(r => {
+        mostrarNotificacion(r.servicio, r.remitente);
+      });
+      document.getElementById('notif-badge').style.display = 'block';
+    }
+  } catch(e) {
+    console.warn('Error verificando respuestas:', e);
+  }
+}
+
+// Pedir permiso al cargar
+pedirPermiso();
+
+// Revisar cada 60 segundos
+setInterval(checkRespuestas, 60000);
+</script>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="{% url 'inicio' %}">
+    <span class="logo">MOVii</span>
+    <span class="logo-sub">ESCALAMIENTOS</span>
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+    <li><a href="{% url 'inicio' %}" {% if request.resolver_match.url_name == 'inicio' %}class="active"{% endif %}>+ Nuevo</a></li>
+    <li><a href="{% url 'historial' %}" {% if request.resolver_match.url_name == 'historial' %}class="active"{% endif %}>Historial</a></li>
+    <li style="position:relative;">
+      <span id="notif-badge" style="display:none; position:absolute; top:-4px; right:-4px;
+            width:10px; height:10px; border-radius:50%; background:#fff; border:2px solid #E91E8C;"></span>
+    </li>
+  </ul>
+</nav>
+
+<div class="page">
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }}">
+    {{ msg }}
+    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %}
+
+  {% block content %}{% endblock %}
+</div>
+
+{% block js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "recaudos_punto_pago": {
+    "nombre": "PSE - AVANZA",
+    "contacto": {
+      "nombre": "Equipo ACH",
+      "emails": [
+        "nicolas.prieto@moviired.co"
+      ],
+      "emails_copia": [
+        "gerencia@puntopago.com",
+        "noc@tuempresa.com"
+      ],
+      "tipo": "proveedor"
+    },
+    "componentes": [
+      {
+        "id": "bankagency-th-pse-avanza",
+        "nombre": "bankagency-th-pse-avanza",
+        "namespace": "bankagency-prod",
+        "app_label": "bankagency-th-pse-avanza",
+        "terminos_log": []
+      }
+    ]
+}
+}

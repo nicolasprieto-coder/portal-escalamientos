@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Escalamiento #{{ esc.pk }} · MOVii{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+  <div>
+    <div class="section-title" style="font-size:20px;">Escalamiento #{{ esc.pk }}</div>
+    <div class="section-subtitle">{{ esc.servicio_nombre }}</div>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <span class="badge badge-{{ esc.estado }}" style="font-size:13px; padding:8px 16px;">
+      {{ esc.get_estado_display|upper }}
+    </span>
+    <a href="{% url 'historial' %}" class="btn btn-outline" style="border-radius:20px;">← Historial</a>
+  </div>
+</div>
+
+<!-- Info del escalamiento -->
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <div class="section-icon section-icon-pink">📋</div>
+    <div class="section-title" style="font-size:15px;">Detalles del escalamiento</div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#9a9ab0; letter-spacing:.5px; margin-bottom:4px;">SERVICIO</div>
+      <div style="font-size:14px; font-weight:700; color:#2D2D6B;">{{ esc.servicio_nombre }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#9a9ab0; letter-spacing:.5px; margin-bottom:4px;">INICIO NOVEDAD</div>
+      <div style="font-size:14px; font-weight:700; color:#2D2D6B;">{{ esc.hora_inicio_novedad|date:"d/m/Y H:i" }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#9a9ab0; letter-spacing:.5px; margin-bottom:4px;">ENVIADO</div>
+      <div style="font-size:14px; font-weight:700; color:#2D2D6B;">{{ esc.enviado_en|date:"d/m/Y H:i"|default:"—" }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#9a9ab0; letter-spacing:.5px; margin-bottom:4px;">DESTINATARIOS</div>
+      <div style="font-size:13px; color:#2D2D6B;">{{ esc.destinatarios|join:", " }}</div>
+    </div>
+  </div>
+
+  {% if esc.estado == 'enviado' %}
+  <div style="margin-top:20px; padding-top:20px; border-top:1px solid #eee;">
+    <form method="post" action="{% url 'cerrar' esc.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary" style="background:#1a7a4a; box-shadow:0 4px 14px rgba(26,122,74,0.25);">
+        ✅ Marcar como cerrado
+      </button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Respuestas del hilo -->
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <div class="section-icon section-icon-navy">💬</div>
+    <div>
+      <div class="section-title" style="font-size:15px;">Traza del correo</div>
+      <div class="section-subtitle">Respuestas recibidas en Gmail para este escalamiento</div>
+    </div>
+  </div>
+
+  {% if respuestas %}
+    {% for r in respuestas %}
+    <div style="border:1px solid #eee; border-radius:10px; padding:16px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#fde8f4;
+                      display:flex; align-items:center; justify-content:center;
+                      font-size:13px; font-weight:800; color:#E91E8C; flex-shrink:0;">
+            {{ r.remitente|first|upper }}
+          </div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#2D2D6B;">{{ r.remitente }}</div>
+            <div style="font-size:11px; color:#9a9ab0;">{{ r.asunto }}</div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:#9a9ab0; white-space:nowrap;">{{ r.fecha }}</div>
+      </div>
+      <div style="font-size:13px; color:#444; line-height:1.7; background:#f7f7fb;
+                  border-radius:8px; padding:12px; white-space:pre-wrap;">{{ r.cuerpo }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="text-align:center; padding:32px; color:#9a9ab0;">
+      <div style="font-size:32px; margin-bottom:12px;">📭</div>
+      <div style="font-size:13px;">
+        {% if esc.estado == 'enviado' %}
+          Sin respuestas aún. Se actualizará automáticamente cuando llegue una respuesta.
+        {% else %}
+          Este escalamiento aún no ha sido enviado.
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Cuerpo del correo enviado -->
+<div class="card">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+    <div class="section-icon section-icon-pink">✉️</div>
+    <div class="section-title" style="font-size:15px;">Correo enviado</div>
+  </div>
+  <div style="font-size:12px; font-weight:700; color:#9a9ab0; margin-bottom:6px;">ASUNTO</div>
+  <div style="font-size:14px; font-weight:700; color:#2D2D6B; margin-bottom:16px;">{{ esc.asunto_correo }}</div>
+  <div style="font-size:12px; font-weight:700; color:#9a9ab0; margin-bottom:6px;">CUERPO</div>
+  <div style="font-size:13px; color:#444; line-height:1.7; background:#f7f7fb;
+              border-radius:8px; padding:16px; white-space:pre-wrap;">{{ esc.cuerpo_correo }}</div>
+</div>
+
+{% endblock %}

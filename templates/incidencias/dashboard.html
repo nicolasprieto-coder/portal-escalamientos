@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · MOVii{% endblock %}
+
+{% block content %}
+<style>
+  .page { max-width: 1400px; }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .metric {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+  .metric-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: .6px;
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1;
+  }
+  .metric-sub {
+    font-size: 12px;
+    margin-top: 6px;
+    color: var(--text-muted);
+  }
+  .metric-accent { color: #E91E8C; }
+  .metric-green  { color: #1a7a4a; }
+
+  .chart-grid-top {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-grid-bottom {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+  .chart-card-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 3px;
+  }
+  .chart-card-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+</style>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+  <div>
+    <div class="section-title" style="font-size:20px;">Dashboard</div>
+    <div class="section-subtitle">Resumen general de los escalamientos realizados</div>
+  </div>
+</div>
+
+<!-- Métricas -->
+<div class="metric-grid">
+  <div class="metric">
+    <div class="metric-label">TOTAL ESCALAMIENTOS</div>
+    <div class="metric-value">{{ total }}</div>
+    <div class="metric-sub">Histórico completo</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">ABIERTOS</div>
+    <div class="metric-value metric-accent">{{ abiertos }}</div>
+    <div class="metric-sub metric-accent">Requieren atención</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">CERRADOS</div>
+    <div class="metric-value metric-green">{{ cerrados }}</div>
+    <div class="metric-sub metric-green">Resueltos</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">TIEMPO PROM. RESOLUCIÓN</div>
+    <div class="metric-value">{{ tiempo_promedio }}</div>
+    <div class="metric-sub">Horas por escalamiento</div>
+  </div>
+</div>
+
+<!-- Fila superior de gráficas -->
+<div class="chart-grid-top">
+
+  <!-- Servicios que más escalan -->
+  <div class="chart-card">
+    <div class="chart-card-title">Servicios que más escalan</div>
+    <div class="chart-card-sub">Top servicios por incidencias</div>
+    <div style="position:relative; height:240px;">
+      <canvas id="chart-servicios" role="img" aria-label="Servicios que más escalan">{{ servicios_labels|join:", " }}</canvas>
+    </div>
+  </div>
+
+  <!-- Tendencia por mes -->
+  <div class="chart-card">
+    <div class="chart-card-title">Escalamientos por mes</div>
+    <div class="chart-card-sub">Últimos 6 meses</div>
+    <div style="position:relative; height:240px;">
+      <canvas id="chart-meses" role="img" aria-label="Escalamientos por mes">{{ meses_labels|join:", " }}</canvas>
+    </div>
+  </div>
+
+  <!-- Donut estados -->
+  <div class="chart-card">
+    <div class="chart-card-title">Estados actuales</div>
+    <div class="chart-card-sub">Distribución por estado</div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#E91E8C;"></span>Enviado ({{ enviados }})</span>
+      <span><span class="legend-dot" style="background:#1a7a4a;"></span>Cerrado ({{ cerrados }})</span>
+      <span><span class="legend-dot" style="background:#2D2D6B;"></span>Borrador ({{ borradores }})</span>
+    </div>
+    <div style="position:relative; height:200px;">
+      <canvas id="chart-donut" role="img" aria-label="Distribución de escalamientos por estado">Enviado: {{ enviados }}, Cerrado: {{ cerrados }}, Borrador: {{ borradores }}</canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Fila inferior -->
+<div class="chart-grid-bottom">
+
+  <!-- Barras apiladas por servicio y estado -->
+  <div class="chart-card">
+    <div class="chart-card-title">Escalamientos por servicio y estado</div>
+    <div class="chart-card-sub">Distribución de estados por cada servicio</div>
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#E91E8C;"></span>Enviado</span>
+      <span><span class="legend-dot" style="background:#1a7a4a;"></span>Cerrado</span>
+      <span><span class="legend-dot" style="background:#2D2D6B;"></span>Borrador</span>
+    </div>
+    <div style="position:relative; height:200px;">
+      <canvas id="chart-apilado" role="img" aria-label="Escalamientos por servicio y estado">Distribución de estados por servicio</canvas>
+    </div>
+  </div>
+
+  <!-- Últimos escalamientos -->
+  <div class="chart-card">
+    <div class="chart-card-title">Últimos escalamientos</div>
+    <div class="chart-card-sub">Actividad reciente</div>
+    {% for e in ultimos %}
+    <div style="display:flex; justify-content:space-between; align-items:center;
+                padding:10px 0; border-bottom:0.5px solid var(--gray-line);">
+      <div>
+        <div style="font-size:13px; font-weight:700; color:var(--navy);">{{ e.servicio_nombre }}</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">{{ e.creado_en|date:"d/m/Y H:i" }}</div>
+      </div>
+      <span class="badge badge-{{ e.estado }}" style="font-size:10px;">{{ e.get_estado_display|upper }}</span>
+    </div>
+    {% empty %}
+    <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">Sin escalamientos aún</div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const pink  = '#E91E8C';
+const navy  = '#2D2D6B';
+const green = '#1a7a4a';
+const gray  = '#9a9ab0';
+
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+};
+
+const scaleOpts = {
+  x: { grid: { display: false }, ticks: { font: { size: 11 }, color: gray } },
+  y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: gray } }
+};
+
+// Servicios que más escalan
+new Chart(document.getElementById('chart-servicios'), {
+  type: 'bar',
+  data: {
+    labels: {{ servicios_labels|safe }},
+    datasets: [{
+      data: {{ servicios_data|safe }},
+      backgroundColor: [pink, pink+'cc', pink+'99', pink+'66', pink+'44'],
+      borderRadius: 6,
+    }]
+  },
+  options: { ...baseOpts, scales: scaleOpts }
+});
+
+// Tendencia por mes
+new Chart(document.getElementById('chart-meses'), {
+  type: 'line',
+  data: {
+    labels: {{ meses_labels|safe }},
+    datasets: [{
+      data: {{ meses_data|safe }},
+      borderColor: pink,
+      backgroundColor: pink + '18',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: pink,
+      pointRadius: 5,
+    }]
+  },
+  options: { ...baseOpts, scales: scaleOpts }
+});
+
+// Donut estados
+new Chart(document.getElementById('chart-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Enviado', 'Cerrado', 'Borrador'],
+    datasets: [{
+      data: [{{ enviados }}, {{ cerrados }}, {{ borradores }}],
+      backgroundColor: [pink, green, navy],
+      borderWidth: 0,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    ...baseOpts,
+    cutout: '65%',
+    plugins: { legend: { display: false } }
+  }
+});
+
+// Barras apiladas
+new Chart(document.getElementById('chart-apilado'), {
+  type: 'bar',
+  data: {
+    labels: {{ servicios_labels|safe }},
+    datasets: [
+      { label: 'Enviado',  data: {{ apilado_enviados|safe }},  backgroundColor: pink,  borderRadius: 4 },
+      { label: 'Cerrado',  data: {{ apilado_cerrados|safe }},  backgroundColor: green, borderRadius: 4 },
+      { label: 'Borrador', data: {{ apilado_borradores|safe }}, backgroundColor: navy, borderRadius: 4 },
+    ]
+  },
+  options: {
+    ...baseOpts,
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 }, color: gray } },
+      y: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, color: gray } }
+    }
+  }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Nueva incidencia · MOVii{% endblock %}
+
+{% block content %}
+
+<div class="steps">
+  <div class="step-bar active"></div>
+  <div class="step-bar"></div>
+  <div class="step-bar"></div>
+</div>
+<div class="step-labels">
+  <span class="step-label active">1. Registrar</span>
+  <span class="step-label">2. Revisar borrador</span>
+  <span class="step-label">3. Enviar</span>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+    <div class="section-icon section-icon-pink">⚠️</div>
+    <div>
+      <div class="section-title">Nueva incidencia</div>
+      <div class="section-subtitle">Completa los datos para consultar los logs y generar el escalamiento</div>
+    </div>
+  </div>
+
+  <form method="post" action="{% url 'registrar' %}" id="form-incidencia">
+    {% csrf_token %}
+
+    <div style="margin-bottom:18px;">
+      <label class="form-label">Servicio afectado</label>
+      {{ form.servicio }}
+      {% if form.servicio.errors %}
+        <div style="font-size:12px; color:#E91E8C; margin-top:5px;">{{ form.servicio.errors }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Info del servicio seleccionado -->
+    <div id="info-servicio" style="display:none; margin-bottom:18px;">
+      <div style="background:#f7f7fb; border-radius:10px; padding:14px 16px; border:1px solid #eee;">
+        <div style="font-size:11px; font-weight:700; color:#9a9ab0; letter-spacing:.6px; margin-bottom:10px;">COMPONENTES QUE SE CONSULTARÁN</div>
+        <div id="lista-componentes"></div>
+        <div style="font-size:11px; font-weight:700; color:#9a9ab0; letter-spacing:.6px; margin-top:12px; margin-bottom:8px;">DESTINATARIOS</div>
+        <div id="lista-contactos"></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label class="form-label">Hora de inicio de la novedad</label>
+      {{ form.hora_inicio_novedad }}
+      <div class="form-text">Se consultarán los logs desde 5 minutos antes de esta hora hasta ahora.</div>
+      {% if form.hora_inicio_novedad.errors %}
+        <div style="font-size:12px; color:#E91E8C; margin-top:5px;">{{ form.hora_inicio_novedad.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div style="margin-bottom:24px;">
+
+      <!-- Toggle -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor:pointer;"
+          onclick="toggleTermino()">
+        <div id="check-termino"
+            style="width:20px; height:20px; border-radius:5px; border:2px solid #eee;
+                    background:#fff; display:flex; align-items:center; justify-content:center;
+                    transition:all .2s; flex-shrink:0;">
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#2D2D6B;">
+            Buscar por código o palabra clave del error
+          </div>
+          <div style="font-size:11px; color:#9a9ab0; margin-top:2px;">
+            Activa esto si ya conoces el error específico
+          </div>
+        </div>
+      </div>
+
+      <!-- Campo oculto por defecto -->
+      <div id="box-termino" style="display:none;">
+        {{ form.termino_error }}
+        <div class="form-text">
+          Ej: ReadTimeoutException, 503, FAIL_INVALIDTRAZABILITYCODE...
+          Si lo dejas vacío el sistema detecta el error automáticamente.
+        </div>
+      </div>
+
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-w100" id="btn-submit">
+      Consultar logs y generar borrador
+    </button>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+
+  let terminoActivo = false;
+
+function toggleTermino() {
+  terminoActivo = !terminoActivo;
+  const check = document.getElementById('check-termino');
+  const box   = document.getElementById('box-termino');
+  const input = document.querySelector('[name=termino_error]');
+
+  if (terminoActivo) {
+    check.style.background      = '#E91E8C';
+    check.style.borderColor     = '#E91E8C';
+    check.innerHTML             = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    box.style.display           = 'block';
+    input.focus();
+  } else {
+    check.style.background      = '#fff';
+    check.style.borderColor     = '#eee';
+    check.innerHTML             = '';
+    box.style.display           = 'none';
+    input.value                 = '';  // limpiar si desactiva
+  }
+}
+document.querySelector('[name=servicio]').addEventListener('change', function() {
+  const sid = this.value;
+  const box = document.getElementById('info-servicio');
+  if (!sid) { box.style.display = 'none'; return; }
+
+  fetch(`/api/servicio/${sid}/`)
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('lista-componentes').innerHTML =
+      data.componentes.map(c =>
+        `<span class="info-chip">${c.nombre}</span>`
+      ).join('');
+
+    // Ahora es un solo contacto con varios emails
+    const emails = data.contacto.emails || [];
+    document.getElementById('lista-contactos').innerHTML =
+      `<span class="info-chip info-chip-navy" style="margin-bottom:4px;">${data.contacto.nombre}</span><br>` +
+      emails.map(e =>
+        `<span class="info-chip info-chip-navy">${e}</span>`
+      ).join('');
+
+    box.style.display = 'block';
+  });
+});
+
+document.getElementById('form-incidencia').addEventListener('submit', function() {
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Consultando Grafana y generando borrador...';
+});
+</script>
+{% endblock %}

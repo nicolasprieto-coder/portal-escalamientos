@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Revisar escalamiento · MOVii{% endblock %}
+
+{% block content %}
+
+<div class="steps">
+  <div class="step-bar done"></div>
+  <div class="step-bar active"></div>
+  <div class="step-bar"></div>
+</div>
+<div class="step-labels">
+  <span class="step-label done">1. Registrar</span>
+  <span class="step-label active">2. Revisar borrador</span>
+  <span class="step-label">3. Enviar</span>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+    <div class="section-icon section-icon-navy">✉️</div>
+    <div>
+      <div class="section-title">Revisar y confirmar escalamiento</div>
+      <div class="section-subtitle">Edita el asunto, cuerpo y destinatarios antes de enviar</div>
+    </div>
+  </div>
+
+  <form method="post" id="form-preview">
+    {% csrf_token %}
+    {{ form.escalamiento_id }}
+
+    <div style="margin-bottom:18px;">
+      <label class="form-label">Asunto</label>
+      {{ form.asunto }}
+    </div>
+
+    <div style="margin-bottom:18px;">
+      <label class="form-label">Cuerpo del correo</label>
+      {{ form.cuerpo }}
+    </div>
+
+    <!-- Destinatarios estilo Gmail -->
+    <div style="margin-bottom:24px;">
+      <label class="form-label">Destinatarios</label>
+      <input type="hidden" name="destinatarios" id="destinatarios-hidden">
+      <div id="destinatarios-box"
+           style="min-height:52px; border:1.5px solid #eee; border-radius:10px; padding:8px 12px;
+                  display:flex; flex-wrap:wrap; gap:6px; cursor:text; transition:border-color .2s;"
+           onclick="document.getElementById('dest-input').focus()">
+        <input id="dest-input" type="text"
+               placeholder="Escribe un correo y presiona Enter..."
+               style="border:none; outline:none; flex:1; min-width:200px; background:transparent;
+                      font-family:'Nunito',sans-serif; font-size:14px; color:#2D2D6B; padding:4px 0;">
+      </div>
+      <div class="form-text">Presiona Enter para agregar · Backspace para eliminar el último</div>
+    </div>
+
+    <!-- Copia (CC) -->
+    <div style="margin-bottom:24px;">
+      <label class="form-label">
+        Con copia (CC)
+        <span style="color:#9a9ab0; font-weight:400; font-size:11px; margin-left:6px;">OPCIONAL</span>
+      </label>
+      <input type="hidden" name="destinatarios_copia" id="copia-hidden">
+      <div id="copia-box"
+          style="min-height:52px; border:1.5px solid #eee; border-radius:10px; padding:8px 12px;
+                  display:flex; flex-wrap:wrap; gap:6px; cursor:text; transition:border-color .2s;"
+          onclick="document.getElementById('copia-input').focus()">
+        <input id="copia-input" type="text"
+              placeholder="Agrega correos en copia y presiona Enter..."
+              style="border:none; outline:none; flex:1; min-width:200px; background:transparent;
+                      font-family:'Nunito',sans-serif; font-size:14px; color:#2D2D6B; padding:4px 0;">
+      </div>
+      <div class="form-text">Estos correos recibirán el escalamiento como copia.</div>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="{% url 'inicio' %}" class="btn btn-outline">← Volver</a>
+      <button type="submit" class="btn btn-success" style="flex:1; justify-content:center;" id="btn-enviar">
+        Confirmar y enviar correo
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Logs adjuntos -->
+<div class="card">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+    <div class="section-icon section-icon-navy">📋</div>
+    <div>
+      <div class="section-title" style="font-size:14px;">Logs recopilados</div>
+      <div class="section-subtitle">Este archivo se adjuntará al correo</div>
+    </div>
+  </div>
+  <div class="log-block">{{ esc.logs_recopilados }}</div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+
+const emailsCopia = [];
+const copiasIniciales = {{ copia_iniciales|safe }};
+copiasIniciales.forEach(e => agregarCopia(e));
+
+function agregarCopia(email) {
+  email = email.trim().toLowerCase();
+  if (!email || emailsCopia.includes(email)) return;
+  if (!email.includes('@')) { alert('Correo inválido: ' + email); return; }
+  emailsCopia.push(email);
+  renderCopias();
+  actualizarCopiaHidden();
+}
+
+function eliminarCopia(email) {
+  const idx = emailsCopia.indexOf(email);
+  if (idx > -1) emailsCopia.splice(idx, 1);
+  renderCopias();
+  actualizarCopiaHidden();
+}
+
+function renderCopias() {
+  const box   = document.getElementById('copia-box');
+  const input = document.getElementById('copia-input');
+  box.querySelectorAll('.copia-card').forEach(c => c.remove());
+
+  emailsCopia.forEach(email => {
+    const card = document.createElement('span');
+    card.className = 'copia-card';
+    card.style.cssText = `
+      display:inline-flex; align-items:center; gap:6px;
+      background:#f0f0f8; color:#2D2D6B;
+      border-radius:20px; padding:5px 10px 5px 7px;
+      font-size:13px; font-weight:700; font-family:'Nunito',sans-serif;
+    `;
+    card.innerHTML = `
+      <span style="width:22px;height:22px;border-radius:50%;background:#2D2D6B;color:#fff;
+                   display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">
+        ${email[0].toUpperCase()}
+      </span>
+      ${email}
+      <button type="button" onclick="eliminarCopia('${email}')"
+        style="background:none;border:none;color:#2D2D6B;font-size:16px;cursor:pointer;
+               line-height:1;padding:0;margin-left:2px;opacity:.7;">×</button>
+    `;
+    box.insertBefore(card, input);
+  });
+}
+
+function actualizarCopiaHidden() {
+  document.getElementById('copia-hidden').value = emailsCopia.join('\n');
+}
+
+const copiaInput = document.getElementById('copia-input');
+copiaInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    agregarCopia(this.value);
+    this.value = '';
+  }
+  if (e.key === 'Backspace' && this.value === '' && emailsCopia.length > 0) {
+    eliminarCopia(emailsCopia[emailsCopia.length - 1]);
+  }
+});
+
+copiaInput.addEventListener('focus', () => {
+  document.getElementById('copia-box').style.borderColor = '#2D2D6B';
+  document.getElementById('copia-box').style.boxShadow = '0 0 0 3px rgba(45,45,107,0.1)';
+});
+copiaInput.addEventListener('blur', () => {
+  document.getElementById('copia-box').style.borderColor = '#eee';
+  document.getElementById('copia-box').style.boxShadow = 'none';
+});
+
+const emails = [];
+const iniciales = {{ destinatarios_iniciales|safe }};
+iniciales.forEach(e => agregarEmail(e));
+
+function agregarEmail(email) {
+  email = email.trim().toLowerCase();
+  if (!email || emails.includes(email)) return;
+  if (!email.includes('@')) { alert('Correo inválido: ' + email); return; }
+  emails.push(email);
+  renderCards();
+  actualizarHidden();
+}
+
+function eliminarEmail(email) {
+  const idx = emails.indexOf(email);
+  if (idx > -1) emails.splice(idx, 1);
+  renderCards();
+  actualizarHidden();
+}
+
+function renderCards() {
+  const box   = document.getElementById('destinatarios-box');
+  const input = document.getElementById('dest-input');
+  box.querySelectorAll('.dest-card').forEach(c => c.remove());
+
+  emails.forEach(email => {
+    const card = document.createElement('span');
+    card.className = 'dest-card';
+    card.style.cssText = `
+      display:inline-flex; align-items:center; gap:6px;
+      background:#fde8f4; color:#E91E8C;
+      border-radius:20px; padding:5px 10px 5px 7px;
+      font-size:13px; font-weight:700; font-family:'Nunito',sans-serif;
+    `;
+    card.innerHTML = `
+      <span style="width:22px;height:22px;border-radius:50%;background:#E91E8C;color:#fff;
+                   display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">
+        ${email[0].toUpperCase()}
+      </span>
+      ${email}
+      <button type="button" onclick="eliminarEmail('${email}')"
+        style="background:none;border:none;color:#E91E8C;font-size:16px;cursor:pointer;
+               line-height:1;padding:0;margin-left:2px;opacity:.7;">×</button>
+    `;
+    box.insertBefore(card, input);
+  });
+}
+
+function actualizarHidden() {
+  document.getElementById('destinatarios-hidden').value = emails.join('\n');
+}
+
+const destInput = document.getElementById('dest-input');
+destInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    agregarEmail(this.value);
+    this.value = '';
+  }
+  if (e.key === 'Backspace' && this.value === '' && emails.length > 0) {
+    eliminarEmail(emails[emails.length - 1]);
+  }
+});
+
+// Focus ring en el box
+destInput.addEventListener('focus', () => {
+  document.getElementById('destinatarios-box').style.borderColor = '#E91E8C';
+  document.getElementById('destinatarios-box').style.boxShadow = '0 0 0 3px rgba(233,30,140,0.1)';
+});
+destInput.addEventListener('blur', () => {
+  document.getElementById('destinatarios-box').style.borderColor = '#eee';
+  document.getElementById('destinatarios-box').style.boxShadow = 'none';
+});
+
+document.getElementById('form-preview').addEventListener('submit', function() {
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+});
+</script>
+{% endblock %}
