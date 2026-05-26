@@ -421,13 +421,14 @@ setInterval(checkRespuestas, 60000);
 <body>
 
 <nav class="navbar">
-  <a class="navbar-brand" href="{% url 'inicio' %}">
+  <a class="navbar-brand" href="{% url 'dashboard' %}">
     <span class="logo">MOVii</span>
     <span class="logo-sub">ESCALAMIENTOS</span>
   </a>
   <ul class="navbar-nav">
     <li><a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
     <li><a href="{% url 'inicio' %}" {% if request.resolver_match.url_name == 'inicio' %}class="active"{% endif %}>+ Nuevo</a></li>
+    <li><a href="{% url 'lista_servicios' %}">Servicios</a></li>
     <li><a href="{% url 'historial' %}" {% if request.resolver_match.url_name == 'historial' %}class="active"{% endif %}>Historial</a></li>
     <li style="position:relative;">
       <span id="notif-badge" style="display:none; position:absolute; top:-4px; right:-4px;

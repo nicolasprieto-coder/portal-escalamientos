@@ -92,35 +92,35 @@ def _construir_prompt(saludo, destinatario, servicio, descripcion, hora_inicio, 
 
     return f"""Eres un redactor técnico del equipo de NOC de una empresa de telecomunicaciones.
 
-Tu tarea es tomar una descripción informal de una incidencia y redactar un correo formal de escalamiento en español.
+Tu tarea es redactar un correo formal de escalamiento en español.
 
-DATOS:
-- Saludo según hora del día: {saludo}
-- Nombre del destinatario: {destinatario}
-- Servicio afectado (desde perspectiva del usuario): {servicio}
-- Hora de inicio de la novedad: {hora_inicio}
-- Descripción informal del operador: "{descripcion}"
+DATOS DE LA INCIDENCIA:
+- Saludo: {saludo}
+- Destinatario: {destinatario}
+- Servicio afectado: {servicio}
+- Hora de inicio: {hora_inicio}
+- Error principal detectado: {descripcion}
 
-EXTRACTO DE LOGS:
+LOGS RECOPILADOS:
 {logs_resumidos}
 
 INSTRUCCIONES ESTRICTAS:
 - Empieza con "{saludo}" en la primera línea
 - Segunda línea: "{destinatario},"
 - Tercera línea en blanco
-- Reescribir la descripción informal de forma profesional y formal
-- Mencionar que se adjuntan logs para su validación
-- Solicitar confirmación de recepción y ETA
+- El tono debe reflejar que es una afectación MASIVA y sostenida, no un error puntual o aislado
+- Usa frases como "se están presentando de manera reiterada", "se evidencia un volumen elevado de errores", "múltiples transacciones están siendo afectadas"
+- Menciona EXPLÍCITAMENTE el error detectado: "{descripcion}"
+- Describe el impacto funcional sin mencionar componentes internos, pods, namespaces ni tecnologías
+- Menciona que se adjuntan logs para validación
+- Solicita confirmación de recepción y ETA de resolución
 - Máximo 200 palabras
-- NO mencionar nombres de componentes, microservicios, pods, namespaces ni arquitectura interna
-- NO mencionar tecnologías internas (Kubernetes, Docker, Fluentd, etc.)
-- Hablar solo del impacto funcional que percibe el usuario final
-- Firma: "Atentamente,\\nEquipo de Monitoreo"
+- Firma: "Atentamente,\\nEquipo Movii"
 
-Responde ÚNICAMENTE en este formato (sin markdown, sin comillas extras):
-ASUNTO: [asunto aquí]
+Responde ÚNICAMENTE en este formato (sin markdown):
+ASUNTO: [ESCALAMIENTO] [asunto aquí]
 CUERPO:
-[cuerpo completo aquí]"""
+[cuerpo aquí]"""
 
 def _parsear(texto: str) -> dict:
     asunto, cuerpo_lines, en_cuerpo = '', [], False

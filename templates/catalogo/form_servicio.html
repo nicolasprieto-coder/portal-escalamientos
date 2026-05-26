@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} · MOVii{% endblock %}
+
+{% block content %}
+<style>
+  .form-section {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--gray-line);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .field-error { font-size: 12px; color: var(--pink); margin-top: 4px; }
+
+  .comp-item {
+    background: var(--gray-bg);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+    border: 1.5px solid var(--gray-line);
+    transition: border-color .2s;
+  }
+  .comp-item:hover { border-color: var(--pink); }
+  .comp-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--pink-light);
+    color: var(--pink);
+    border: none;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    cursor: help;
+  }
+  .tooltip-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--navy-light);
+    color: var(--navy);
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .tooltip-box {
+    display: none;
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--navy);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: 220px;
+    z-index: 100;
+    box-shadow: 0 4px 16px rgba(45,45,107,0.2);
+    pointer-events: none;
+  }
+  .tooltip-box::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: var(--navy);
+    border-left: none;
+  }
+  .tooltip-wrap:hover .tooltip-box { display: block; }
+
+  /* Email chips estilo Gmail */
+  .email-input-box {
+    min-height: 52px;
+    border: 1.5px solid var(--gray-line);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    cursor: text;
+    transition: border-color .2s, box-shadow .2s;
+    background: #fff;
+  }
+  .email-input-box:focus-within {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(233,30,140,0.1);
+  }
+  .email-input-box.navy:focus-within {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(45,45,107,0.1);
+  }
+  .email-input-box input {
+    border: none;
+    outline: none;
+    flex: 1;
+    min-width: 180px;
+    background: transparent;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    color: var(--navy);
+    padding: 4px 0;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 20px;
+    padding: 5px 10px 5px 7px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
+  .chip-pink { background: var(--pink-light); color: var(--pink); }
+  .chip-navy { background: var(--navy-light); color: var(--navy); }
+  .chip-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .chip-pink .chip-avatar { background: var(--pink); color: #fff; }
+  .chip-navy .chip-avatar { background: var(--navy); color: #fff; }
+  .chip-remove {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    margin-left: 2px;
+    opacity: .7;
+  }
+  .chip-pink .chip-remove { color: var(--pink); }
+  .chip-navy .chip-remove { color: var(--navy); }
+</style>
+
+<div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+  <a href="{% url 'lista_servicios' %}" class="btn btn-outline" style="border-radius:20px; padding:8px 16px; font-size:13px;">← Volver</a>
+  <div>
+    <div class="section-title" style="font-size:20px;">{{ titulo }}</div>
+    <div class="section-subtitle">Completa los datos del servicio, sus componentes y contacto</div>
+  </div>
+</div>
+
+<form method="post" id="form-servicio">
+{% csrf_token %}
+
+  <!-- ── Datos del servicio ── -->
+  <div class="form-section">
+    <div class="form-section-title">
+      <div class="section-icon section-icon-pink">⚙️</div>
+      <div class="section-title" style="font-size:15px;">Datos del servicio</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">
+          Nombre del servicio
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Nombre legible que verás en el portal y en el correo. Ej: Recaudos Punto de Pago</span>
+          </span>
+        </label>
+        {{ form.nombre }}
+        {% if form.nombre.errors %}<div class="field-error">{{ form.nombre.errors }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          Slug (identificador)
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Clave única sin espacios. No se puede cambiar después. Ej: recaudos_punto_pago</span>
+          </span>
+          {% if servicio %}<span style="color:var(--text-muted); font-weight:400; font-size:11px; margin-left:4px;">· No editable</span>{% endif %}
+        </label>
+        {% if servicio %}
+          <input type="text" class="form-control" value="{{ form.instance.slug }}" disabled
+                 style="background:var(--gray-bg); color:var(--text-muted);">
+          <input type="hidden" name="slug" value="{{ form.instance.slug }}">
+        {% else %}
+          {{ form.slug }}
+        {% endif %}
+        <div class="form-text">Sin espacios ni caracteres especiales. Ej: recargas_paquetes</div>
+        {% if form.slug.errors %}<div class="field-error">{{ form.slug.errors }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Componentes ── -->
+  <div class="form-section">
+    <div class="form-section-title">
+      <div class="section-icon section-icon-navy">📦</div>
+      <div>
+        <div class="section-title" style="font-size:15px;">Componentes</div>
+        <div class="section-subtitle">Pods de Kubernetes donde se buscarán los logs al escalar</div>
+      </div>
+    </div>
+    <div id="componentes-container">
+      {% if servicio %}
+        {% for comp in servicio.componentes.all %}
+        <div class="comp-item">
+          <button type="button" class="comp-remove" onclick="eliminarComp(this)">×</button>
+          <input type="hidden" name="comp_id[]" value="{{ comp.pk }}">
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                Nombre del pod
+                <span class="tooltip-wrap">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-box">Nombre exacto del pod en Kubernetes. Se usará como app label. Ej: bankagency-bill-cn-punto-pago-sb</span>
+                </span>
+              </label>
+              <input type="text" name="comp_nombre[]" class="form-control" value="{{ comp.nombre }}" required>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                Namespace
+                <span class="tooltip-wrap">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-box">Namespace de Kubernetes. Verifica con: kubectl get pods -A. Ej: bankagency-prod</span>
+                </span>
+              </label>
+              <input type="text" name="comp_namespace[]" class="form-control" value="{{ comp.namespace }}" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0; margin-top:10px;">
+            <label class="form-label">
+              Términos de log
+              <span style="color:var(--text-muted); font-weight:400; font-size:11px;">OPCIONAL · separados por coma</span>
+              <span class="tooltip-wrap">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">Palabras clave adicionales para filtrar logs. Déjalo vacío en la mayoría de casos.</span>
+              </span>
+            </label>
+            <input type="text" name="comp_terminos[]" class="form-control"
+                   value="{{ comp.terminos_log|join:', ' }}"
+                   placeholder="Ej: FAIL_CODE, TimeoutException">
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <button type="button" class="btn btn-secondary" onclick="agregarComp()"
+            style="border-radius:20px; font-size:13px; margin-top:4px;">
+      + Agregar componente
+    </button>
+  </div>
+
+  <!-- ── Contacto ── -->
+  <div class="form-section">
+    <div class="form-section-title">
+      <div class="section-icon section-icon-pink">📬</div>
+      <div>
+        <div class="section-title" style="font-size:15px;">Contacto de escalamiento</div>
+        <div class="section-subtitle">A quién se le envía el correo cuando ocurre una incidencia</div>
+      </div>
+    </div>
+
+    {% with contacto=servicio.contactos.first %}
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">
+          Nombre del equipo o proveedor
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Aparecerá en el saludo del correo. Ej: "Buenos días, Equipo Punto Pago,"</span>
+          </span>
+        </label>
+        <input type="text" name="contacto_nombre" class="form-control"
+               value="{% if contacto %}{{ contacto.nombre }}{% endif %}"
+               placeholder="Ej: Equipo Punto Pago" required>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">
+          Tipo
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Proveedor si es externo. Interno si es tu propio equipo.</span>
+          </span>
+        </label>
+        <select name="contacto_tipo" class="form-select">
+          <option value="proveedor" {% if contacto and contacto.tipo == 'proveedor' %}selected{% endif %}>Proveedor</option>
+          <option value="interno"   {% if contacto and contacto.tipo == 'interno'   %}selected{% endif %}>Interno</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Correos principales estilo Gmail -->
+    <div class="form-group">
+      <label class="form-label">
+        Correos principales
+        <span class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <span class="tooltip-box">Correos que recibirán el escalamiento en el campo Para:. Escribe y presiona Enter.</span>
+        </span>
+      </label>
+      <input type="hidden" name="contacto_emails" id="emails-hidden">
+      <div class="email-input-box" id="emails-box" onclick="document.getElementById('emails-input').focus()">
+        <input id="emails-input" type="text" placeholder="Escribe un correo y presiona Enter...">
+      </div>
+      <div class="form-text">Presiona Enter para agregar · Backspace para eliminar el último</div>
+    </div>
+
+    <!-- Correos copia estilo Gmail -->
+    <div class="form-group">
+      <label class="form-label">
+        Correos con copia (CC)
+        <span style="color:var(--text-muted); font-weight:400; font-size:11px;">OPCIONAL</span>
+        <span class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <span class="tooltip-box">Correos que recibirán el escalamiento en copia. Útil para gerencia o supervisores.</span>
+        </span>
+      </label>
+      <input type="hidden" name="contacto_emails_copia" id="copia-hidden">
+      <div class="email-input-box navy" id="copia-box" onclick="document.getElementById('copia-input').focus()">
+        <input id="copia-input" type="text" placeholder="Escribe un correo y presiona Enter...">
+      </div>
+      <div class="form-text">Presiona Enter para agregar · Backspace para eliminar el último</div>
+    </div>
+
+    {% endwith %}
+  </div>
+
+  <!-- ── Acciones ── -->
+  <div style="display:flex; gap:12px; justify-content:flex-end;">
+    <a href="{% url 'lista_servicios' %}" class="btn btn-outline" style="border-radius:20px;">Cancelar</a>
+    <button type="submit" class="btn btn-primary" style="min-width:160px;">
+      💾 Guardar servicio
+    </button>
+  </div>
+
+</form>
+
+<!-- Template componente vacío -->
+<template id="comp-template">
+  <div class="comp-item">
+    <button type="button" class="comp-remove" onclick="eliminarComp(this)">×</button>
+    <input type="hidden" name="comp_id[]" value="">
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">
+          Nombre del pod
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Nombre exacto del pod en Kubernetes. Se usará como app label. Ej: bankagency-bill-cn-punto-pago-sb</span>
+          </span>
+        </label>
+        <input type="text" name="comp_nombre[]" class="form-control" placeholder="Ej: bankagency-bill-cn-punto-pago-sb" required>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">
+          Namespace
+          <span class="tooltip-wrap">
+            <span class="tooltip-icon">?</span>
+            <span class="tooltip-box">Namespace de Kubernetes. Verifica con: kubectl get pods -A. Ej: bankagency-prod</span>
+          </span>
+        </label>
+        <input type="text" name="comp_namespace[]" class="form-control" placeholder="Ej: bankagency-prod" required>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:0; margin-top:10px;">
+      <label class="form-label">
+        Términos de log
+        <span style="color:var(--text-muted); font-weight:400; font-size:11px;">OPCIONAL · separados por coma</span>
+        <span class="tooltip-wrap">
+          <span class="tooltip-icon">?</span>
+          <span class="tooltip-box">Palabras clave adicionales para filtrar logs. Déjalo vacío en la mayoría de casos.</span>
+        </span>
+      </label>
+      <input type="text" name="comp_terminos[]" class="form-control" placeholder="Ej: FAIL_CODE, TimeoutException">
+    </div>
+  </div>
+</template>
+
+{% endblock %}
+
+{% block js %}
+<script>
+// ── Componentes ──
+function agregarComp() {
+  const template  = document.getElementById('comp-template');
+  const container = document.getElementById('componentes-container');
+  const clone     = template.content.cloneNode(true);
+  container.appendChild(clone);
+  container.lastElementChild.querySelector('input[name="comp_nombre[]"]').focus();
+}
+function eliminarComp(btn) {
+  btn.closest('.comp-item').remove();
+}
+
+// ── Email chips genérico ──
+function crearGestorEmails({ boxId, inputId, hiddenId, tipo, iniciales }) {
+  const emails = [];
+  const box    = document.getElementById(boxId);
+  const input  = document.getElementById(inputId);
+  const hidden = document.getElementById(hiddenId);
+  const esPink = tipo === 'pink';
+
+  function agregar(email) {
+    email = email.trim().toLowerCase();
+    if (!email || emails.includes(email)) return;
+    if (!email.includes('@')) { alert('Correo inválido: ' + email); return; }
+    emails.push(email);
+    render();
+    actualizar();
+  }
+
+  function eliminar(email) {
+    const idx = emails.indexOf(email);
+    if (idx > -1) emails.splice(idx, 1);
+    render();
+    actualizar();
+  }
+
+  function render() {
+    box.querySelectorAll('.chip').forEach(c => c.remove());
+    emails.forEach(email => {
+      const chip = document.createElement('span');
+      chip.className = `chip chip-${tipo}`;
+      chip.innerHTML = `
+        <span class="chip-avatar">${email[0].toUpperCase()}</span>
+        ${email}
+        <button type="button" class="chip-remove" onclick="void(0)">×</button>
+      `;
+      chip.querySelector('.chip-remove').addEventListener('click', () => eliminar(email));
+      box.insertBefore(chip, input);
+    });
+  }
+
+function actualizar() {
+  hidden.value = emails.join('\n');
+}
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      agregar(this.value);
+      this.value = '';
+    }
+    if (e.key === 'Backspace' && this.value === '' && emails.length > 0) {
+      eliminar(emails[emails.length - 1]);
+    }
+  });
+
+  // Cargar iniciales
+  if (iniciales && iniciales.length) {
+    iniciales.forEach(e => agregar(e));
+  }
+}
+
+// Inicializar gestores con datos existentes
+{% if servicio %}
+  {% with contacto=servicio.contactos.first %}
+  crearGestorEmails({
+    boxId:    'emails-box',
+    inputId:  'emails-input',
+    hiddenId: 'emails-hidden',
+    tipo:     'pink',
+    iniciales: {{ contacto.emails|default:'[]'|safe }},
+  });
+  crearGestorEmails({
+    boxId:    'copia-box',
+    inputId:  'copia-input',
+    hiddenId: 'copia-hidden',
+    tipo:     'navy',
+    iniciales: {{ contacto.emails_copia|default:'[]'|safe }},
+  });
+  {% endwith %}
+{% else %}
+  crearGestorEmails({ boxId:'emails-box', inputId:'emails-input', hiddenId:'emails-hidden', tipo:'pink',  iniciales:[] });
+  crearGestorEmails({ boxId:'copia-box',  inputId:'copia-input',  hiddenId:'copia-hidden',  tipo:'navy',  iniciales:[] });
+{% endif %}
+</script>
+{% endblock %}

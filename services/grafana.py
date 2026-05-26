@@ -14,7 +14,7 @@ def get_logs(componente: dict, hora_inicio: datetime) -> dict:
     if hora_inicio.tzinfo is None:
         hora_inicio = hora_inicio.replace(tzinfo=timezone.utc)
 
-    desde = hora_inicio - timedelta(minutes=5)
+    desde = hora_inicio
     hasta = datetime.now(tz=timezone.utc)
 
     query_lucene = _construir_query(componente, desde, hasta)

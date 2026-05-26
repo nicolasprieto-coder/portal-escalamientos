@@ -47,7 +47,7 @@
     <div style="margin-bottom:18px;">
       <label class="form-label">Hora de inicio de la novedad</label>
       {{ form.hora_inicio_novedad }}
-      <div class="form-text">Se consultarán los logs desde 5 minutos antes de esta hora hasta ahora.</div>
+      <div class="form-text">Se consultarán los logs desde la hora de inicio de la noveda hasta la hora actual.</div>
       {% if form.hora_inicio_novedad.errors %}
         <div style="font-size:12px; color:#E91E8C; margin-top:5px;">{{ form.hora_inicio_novedad.errors }}</div>
       {% endif %}

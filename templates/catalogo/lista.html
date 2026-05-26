@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Catálogo de servicios · MOVii{% endblock %}
+
+{% block content %}
+<style>
+  .comp-chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--navy-light);
+    color: var(--navy);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin: 2px;
+  }
+  .email-chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--pink-light);
+    color: var(--pink);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin: 2px;
+  }
+  .email-chip-copia {
+    background: var(--navy-light);
+    color: var(--navy);
+  }
+  .servicio-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: box-shadow .2s;
+  }
+  .servicio-card:hover {
+    box-shadow: 0 4px 24px rgba(45,45,107,0.13);
+  }
+  .servicio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--gray-line);
+    cursor: pointer;
+    user-select: none;
+  }
+  .servicio-body {
+    padding: 20px 24px;
+    display: none;
+  }
+  .servicio-body.open {
+    display: block;
+  }
+  .section-mini {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: .6px;
+    margin-bottom: 8px;
+    margin-top: 16px;
+  }
+  .section-mini:first-child { margin-top: 0; }
+  .chevron {
+    transition: transform .25s;
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+  .chevron.open { transform: rotate(180deg); }
+</style>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+  <div>
+    <div class="section-title" style="font-size:20px;">Catálogo de servicios</div>
+    <div class="section-subtitle">Gestiona los servicios, componentes y contactos de escalamiento</div>
+  </div>
+  <a href="{% url 'crear_servicio' %}" class="btn btn-primary">+ Nuevo servicio</a>
+</div>
+
+{% if servicios %}
+  {% for s in servicios %}
+  <div class="servicio-card">
+
+    <!-- Header clickeable -->
+    <div class="servicio-header" onclick="toggleCard({{ s.pk }})">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div class="section-icon section-icon-pink" style="width:36px;height:36px;">⚙️</div>
+        <div>
+          <div style="font-size:15px; font-weight:800; color:var(--navy);">{{ s.nombre }}</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+            <code style="background:var(--gray-bg); padding:2px 8px; border-radius:4px; font-size:11px;">{{ s.slug }}</code>
+            &nbsp;·&nbsp;
+            {{ s.componentes.count }} componente{{ s.componentes.count|pluralize }}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="{% url 'editar_servicio' s.pk %}"
+           class="btn btn-secondary"
+           style="padding:7px 16px; font-size:12px; border-radius:20px;"
+           onclick="event.stopPropagation()">✏️ Editar</a>
+        <button onclick="event.stopPropagation(); confirmarEliminar({{ s.pk }}, '{{ s.nombre }}')"
+                class="btn"
+                style="padding:7px 16px; font-size:12px; border-radius:20px;
+                       background:var(--pink-light); color:var(--pink); border:none; cursor:pointer;">
+          🗑 Eliminar
+        </button>
+        <span class="chevron" id="chevron-{{ s.pk }}">⌄</span>
+      </div>
+    </div>
+
+    <!-- Body expandible -->
+    <div class="servicio-body" id="body-{{ s.pk }}">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+
+        <!-- Componentes -->
+        <div>
+          <div class="section-mini">COMPONENTES</div>
+          {% for c in s.componentes.all %}
+          <div style="background:var(--gray-bg); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:8px;">
+            <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:6px;">{{ c.nombre }}</div>
+            <div style="font-size:12px; color:var(--text-muted);">
+              <span style="margin-right:12px;">📦 <strong>Namespace:</strong> {{ c.namespace }}</span>
+              <span>🏷 <strong>App label:</strong> {{ c.app_label }}</span>
+            </div>
+            {% if c.terminos_log %}
+            <div style="margin-top:8px;">
+              {% for t in c.terminos_log %}
+              <span class="comp-chip">{{ t }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div style="font-size:13px; color:var(--text-muted); font-style:italic;">Sin componentes registrados</div>
+          {% endfor %}
+        </div>
+
+        <!-- Contacto -->
+        <div>
+          {% for contacto in s.contactos.all %}
+          <div class="section-mini">CONTACTO — {{ contacto.nombre|upper }}</div>
+          <div style="background:var(--gray-bg); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">CORREOS PRINCIPALES</div>
+            <div>
+              {% for email in contacto.emails %}
+              <span class="email-chip">{{ email }}</span>
+              {% empty %}
+              <span style="font-size:12px; color:var(--text-muted);">Sin correos</span>
+              {% endfor %}
+            </div>
+            {% if contacto.emails_copia %}
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-top:10px; margin-bottom:6px;">CON COPIA (CC)</div>
+            <div>
+              {% for email in contacto.emails_copia %}
+              <span class="email-chip email-chip-copia">{{ email }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div style="font-size:13px; color:var(--text-muted); font-style:italic;">Sin contacto registrado</div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+{% else %}
+<div class="card" style="text-align:center; padding:60px 28px;">
+  <div style="font-size:48px; margin-bottom:16px;">📋</div>
+  <div style="font-size:16px; font-weight:700; color:var(--navy); margin-bottom:8px;">Sin servicios registrados</div>
+  <div style="font-size:13px; color:var(--text-muted); margin-bottom:24px;">Crea el primer servicio para empezar a gestionar escalamientos</div>
+  <a href="{% url 'crear_servicio' %}" class="btn btn-primary">Crear primer servicio</a>
+</div>
+{% endif %}
+
+<!-- Modal eliminar -->
+<div id="modal-overlay"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+            z-index:200; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:16px; padding:36px 32px;
+              max-width:400px; width:90%; text-align:center;
+              box-shadow:0 8px 40px rgba(45,45,107,0.18);">
+    <div style="font-size:44px; margin-bottom:16px;">🗑️</div>
+    <div style="font-size:17px; font-weight:800; color:var(--navy); margin-bottom:10px;">¿Eliminar servicio?</div>
+    <div style="font-size:13px; color:var(--text-muted); margin-bottom:28px; line-height:1.6;" id="modal-texto"></div>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button onclick="cerrarModal()" class="btn btn-outline" style="border-radius:20px; padding:10px 24px;">Cancelar</button>
+      <form id="form-eliminar" method="post" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn"
+                style="background:var(--pink); color:#fff; border-radius:20px;
+                       padding:10px 24px; box-shadow:0 4px 14px rgba(233,30,140,0.3);">
+          Sí, eliminar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+function toggleCard(pk) {
+  const body    = document.getElementById(`body-${pk}`);
+  const chevron = document.getElementById(`chevron-${pk}`);
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function confirmarEliminar(id, nombre) {
+  document.getElementById('modal-texto').textContent =
+    `Se eliminará el servicio "${nombre}" junto con todos sus componentes y contactos. Esta acción no se puede deshacer.`;
+  document.getElementById('form-eliminar').action = `/catalogo/eliminar/${id}/`;
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+</script>
+{% endblock %}
